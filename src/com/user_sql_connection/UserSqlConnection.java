@@ -10,6 +10,13 @@ import com.mysql.cj.jdbc.MysqlDataSource;
 
 //import com.user_sql_connection.ColumnName;
 import java.util.Scanner;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.io.IOException;
+import java.util.List;
+import java.util.LinkedList;
 
 public class UserSqlConnection {
     Connection connection = null;
@@ -127,6 +134,8 @@ public class UserSqlConnection {
                 SELECT ROLL_NO, NAME, CLASS, DATE_FORMAT(DOB, '%Y-%M-%D') AS DOB, 
                 GENDER, CITY, MARKS FROM STUDENT
                 """;
+        List<String> csvWrite = new LinkedList<>();
+        StringBuilder perLines = new StringBuilder();
         try{
             statement = connection.prepareStatement(query);
             ResultSet execute = statement.executeQuery();
@@ -143,19 +152,33 @@ public class UserSqlConnection {
             for(int i = 1; i <= columnCount; i++){
                 //cannot execute Resultset<variable> before declearing resultset<variable>.next()
                 String displayColumn = String.format("|%-20s", data.getColumnName(i));
+                perLines.append(displayColumn);
+                if(i < columnCount){
+                    perLines.append(",");
+                }
                 System.out.print(displayColumn);
             }
+            csvWrite.add(perLines.toString());
             System.out.println();
 
             while(execute.next()){
+                perLines = new StringBuilder();
                 for(int i = 1; i <= columnCount; i++){
                     String displayColumn = String.format("|%-20s", execute.getString(i));
+                    perLines.append(displayColumn);
+                    if(i < columnCount){
+                        perLines.append(",");
+                    }
                     System.out.print(displayColumn);
                 }
+                csvWrite.add(perLines.toString());
                 System.out.println();
             }
-        } catch(SQLException s) {
-            System.out.println(s);
+            Path csvPath = Paths.get("store/StudentTable.csv");
+            Files.write(csvPath, csvWrite, StandardOpenOption.CREATE, 
+                        StandardOpenOption.TRUNCATE_EXISTING);
+        } catch(SQLException | IOException i) {
+            System.out.println(i);
         }
     }
 
